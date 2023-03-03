@@ -1,0 +1,35 @@
+name: aws-vault
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: ./fetch-gh-release.sh aws-vault 99designs/aws-vault >>$GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - if: env.GHR_EXISTS == '0'
+        run: |
+          ./download-gh-release.sh 'aws-vault-linux-(amd64|arm64)' <"$GHR_RELEASE_FILE"
+          ./package-deb-singlebin.sh aws-vault "$GHR_VERSION" aws-vault 'aws-vault-linux-*' <<EOF
+          Maintainer: nta88
+          Section: admin
+          Priority: optional
+          Description: aws-vault is a vault for securely storing and accessing AWS
+            credentials in development environments.
+          EOF
+      - if: env.GHR_EXISTS == '0'
+        run: git tag -f "$GHR_TAG_NAME" && git push -f origin "$GHR_TAG_NAME"
+      - if: env.GHR_EXISTS == '0'
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.GHR_TAG_NAME }}
+          artifacts: '*.deb'
+          removeArtifacts: true
+          artifactErrorsFailBuild: true
+          allowUpdates: false
