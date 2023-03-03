@@ -1,0 +1,36 @@
+name: buildpacks-pack
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: ./fetch-gh-release.sh buildpacks-pack buildpacks/pack >>$GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - if: env.GHR_EXISTS == '0'
+        run: |
+          ./download-gh-release.sh 'pack-.+-linux(-arm64)?\.tgz' <"$GHR_RELEASE_FILE"
+          tar -xvf pack-*-linux.tgz pack -O >pack-linux-amd64
+          tar -xvf pack-*-linux-arm64.tgz pack -O >pack-linux-arm64
+          ./package-deb-singlebin.sh buildpacks-pack "$GHR_VERSION" pack 'pack-linux-*' <<EOF
+          Maintainer: nta88
+          Section: admin
+          Priority: optional
+          Description: pack is a CLI for building apps using Cloud Native Buildpacks.
+          EOF
+      - if: env.GHR_EXISTS == '0'
+        run: git tag -f "$GHR_TAG_NAME" && git push -f origin "$GHR_TAG_NAME"
+      - if: env.GHR_EXISTS == '0'
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.GHR_TAG_NAME }}
+          artifacts: '*.deb'
+          removeArtifacts: true
+          artifactErrorsFailBuild: true
+          allowUpdates: false
