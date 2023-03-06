@@ -3,7 +3,7 @@ name: aws-vault
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '48 23 * * *'
 
 jobs:
   release:

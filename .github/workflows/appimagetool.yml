@@ -3,7 +3,7 @@ name: appimagetool
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '3 14 * * *'
 
 jobs:
   release:

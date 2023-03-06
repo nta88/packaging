@@ -3,7 +3,7 @@ name: buildpacks-pack
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '39 1 * * *'
 
 jobs:
   release:
